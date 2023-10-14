@@ -68,7 +68,6 @@ export default function CreateListing() {
 
 
     const handleChange=()=>{
-
     }
   return (
     <main className='p-3 max-w-4xl mx-auto'>
