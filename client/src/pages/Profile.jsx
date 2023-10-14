@@ -2,19 +2,26 @@ import { useState, useRef,  useEffect} from 'react'
 import {useSelector} from 'react-redux'
 import {getDownloadURL, getStorage, ref, uploadBytesResumable} from 'firebase/storage'
 import { app } from '../firebase';
-import { updateUserStart, updateUserFailure, updateUserSuccess } from '../redux/user/userSlice';
+import { updateUserStart, updateUserFailure, updateUserSuccess, deleteUserFailure, deleteUserStart, deleteUserSuccess } from '../redux/user/userSlice';
 import { useDispatch } from 'react-redux'
 
 export default function Profile() {
 
   const fileRef =useRef(null);
-  const {currentUser, loading, error} = useSelector(state=> state.user);
+  const {currentUser, loading, error} = useSelector((state)=> state.user);
   const [file, setFile] = useState(undefined);
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const dispatch = useDispatch();
+
+
+  useEffect(()=>{
+    if(file){
+      handleFileUpload(file);
+    }
+  },[file]);
 
 
   const handelChange = (e)=>{
@@ -45,11 +52,24 @@ export default function Profile() {
     }
   }
 
-  useEffect(()=>{
-    if(file){
-      handleFileUpload(file);
+  const handleDeleteUser = async () =>{
+    try {
+      dispatch(deleteUserStart());
+      const res = await fetch(`api/user/delete/${currentUser._id}`,{
+        method:'DELETE'
+      })
+
+      const data = await res.json();
+      if(data.success===false){
+        dispatch(deleteUserFailure(data.message));
+        return;
+      }
+      dispatch(deleteUserSuccess(data));
+      
+    } catch (error) {
+      dispatch(deleteUserFailure(error.message));
     }
-  },[file]);
+  }
 
   const handleFileUpload =(file)=>{
      const storage =getStorage(app);
@@ -105,7 +125,7 @@ export default function Profile() {
       </form>
 
       <div className='flex justify-between mt-5'>
-        <span className='text-red-600 cursor-pointer'>Delete account</span>
+        <span onClick={handleDeleteUser} className='text-red-600 cursor-pointer'>Delete account</span>
         <span className='text-red-600 cursor-pointer'>Sign out</span>
       </div>
 
